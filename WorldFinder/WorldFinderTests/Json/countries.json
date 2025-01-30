@@ -1,0 +1,58 @@
+
+[
+    {
+        "name": "United States",
+        "alpha2Code": "US",
+        "alpha3Code": "USA",
+        "callingCodes": ["1"],
+        "capital": "Washington, D.C.",
+        "subregion": "North America",
+        "region": "Americas",
+        "population": 331000000,
+        "latlng": [37.0902, -95.7129],
+        "demonym": "American",
+        "area": 9833517.0,
+        "timezones": ["UTC−12:00", "UTC−11:00", "UTC−10:00"],
+        "borders": ["CAN", "MEX"],
+        "nativeName": "United States",
+        "numericCode": "840",
+        "flags": { "svg": "https://flagcdn.com/us.svg", "png": "https://flagcdn.com/w320/us.png" },
+        "currencies": [{ "code": "USD", "name": "United States Dollar", "symbol": "$" }],
+        "languages": [
+            { "iso639_1": "en", "iso639_2": "eng", "name": "English", "nativeName": "English" }
+        ],
+        "translations": { "de": "Vereinigte Staaten", "es": "Estados Unidos" },
+        "flag": "https://flagcdn.com/us.svg",
+        "regionalBlocs": [{ "acronym": "NAFTA", "name": "North American Free Trade Agreement" }],
+        "cioc": "USA",
+        "independent": true
+    },
+    {
+        "name": "Canada",
+        "alpha2Code": "CA",
+        "alpha3Code": "CAN",
+        "callingCodes": ["1"],
+        "capital": "Ottawa",
+        "subregion": "North America",
+        "region": "Americas",
+        "population": 37742154,
+        "latlng": [56.1304, -106.3468],
+        "demonym": "Canadian",
+        "area": 9984670.0,
+        "timezones": ["UTC−08:00", "UTC−07:00", "UTC−06:00"],
+        "borders": ["USA"],
+        "nativeName": "Canada",
+        "numericCode": "124",
+        "flags": { "svg": "https://flagcdn.com/ca.svg", "png": "https://flagcdn.com/w320/ca.png" },
+        "currencies": [{ "code": "CAD", "name": "Canadian Dollar", "symbol": "$" }],
+        "languages": [
+            { "iso639_1": "en", "iso639_2": "eng", "name": "English", "nativeName": "English" },
+            { "iso639_1": "fr", "iso639_2": "fra", "name": "French", "nativeName": "Français" }
+        ],
+        "translations": { "de": "Kanada", "es": "Canadá" },
+        "flag": "https://flagcdn.com/ca.svg",
+        "regionalBlocs": [{ "acronym": "NAFTA", "name": "North American Free Trade Agreement" }],
+        "cioc": "CAN",
+        "independent": true
+    }
+]

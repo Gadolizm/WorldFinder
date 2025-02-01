@@ -20,6 +20,9 @@
 - **SwiftUI** (UI Framework)
 - **Combine** (Reactive Programming)
 - **CoreLocation** (For Location Services)
-- **REST API** (Fetch Countries from `restcountries.com`)
+- **REST API** 
+	•	Clean Architecture (Separation of Concerns)
+	•	MVVM (Model-View-ViewModel) (Ensures UI & Business Logic Separation)
+	•	Protocol-Oriented Programming (POP) (For flexible & testable code)
 
 ---

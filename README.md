@@ -11,7 +11,6 @@
 ✅ **Save Favorite Countries**  
 ✅ **Offline Support** (Stores data using `UserDefaults`)  
 ✅ **Location-Based Country Detection**  
-✅ **Dark Mode Support**  
 
 ---
 

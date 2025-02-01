@@ -1,5 +1,5 @@
 //
-//  Untitled.swift
+//  SearchBar.swift
 //  WorldFinder
 //
 //  Created by Haitham Gado on 30/01/2025.

@@ -11,6 +11,7 @@ enum NetworkError: Error, LocalizedError {
     case invalidURL
     case requestFailed
     case decodingFailed
+    case cacheNotFound
     case unknown
 
     var errorDescription: String? {
@@ -21,6 +22,8 @@ enum NetworkError: Error, LocalizedError {
             return "The request failed."
         case .decodingFailed:
             return "Failed to decode the response."
+        case .cacheNotFound:
+            return "No cached data found."  
         case .unknown:
             return "An unknown error occurred."
         }

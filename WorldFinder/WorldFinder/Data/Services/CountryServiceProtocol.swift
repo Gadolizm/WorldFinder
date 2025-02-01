@@ -9,5 +9,5 @@ import Combine
 import Foundation
 
 protocol CountryServiceProtocol {
-    func fetchAllCountries() -> AnyPublisher<[Country], Error>
+    func fetchAllCountries(method: HTTPMethod, body: Data?) -> AnyPublisher<[Country], NetworkError>
 }

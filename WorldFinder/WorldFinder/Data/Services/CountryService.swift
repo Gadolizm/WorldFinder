@@ -8,24 +8,20 @@
 import Combine
 import Foundation
 
-
 class CountryService: CountryServiceProtocol {
-    private let session: URLSessionProtocol
+    private let networkManager: NetworkManagerProtocol
 
-    init(session: URLSessionProtocol = URLSession.shared) {
-        self.session = session
+    init(networkManager: NetworkManagerProtocol = NetworkManager.shared) {
+        self.networkManager = networkManager
     }
 
-    func fetchAllCountries() -> AnyPublisher<[Country], Error> {
-        let urlString = APIConstants.baseURL + APIConstants.allCountriesEndpoint
-        guard let url = URL(string: urlString) else {
-            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
-        }
-        
-        return session.fetchDataPublisher(for: url)
-            .map(\.data)
-            .decode(type: [Country].self, decoder: JSONDecoder())
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
-    }
+    /// ✅ Fetch all countries (Supports dynamic HTTP methods)
+     func fetchAllCountries(method: HTTPMethod = .get, body: Data? = nil) -> AnyPublisher<[Country], NetworkError> {
+         return networkManager.fetchData(
+             from: APIConstants.allCountriesEndpoint,
+             responseType: [Country].self,
+             method: method,
+             body: body
+         )
+     }
 }

@@ -8,16 +8,34 @@
 import Foundation
 import Combine
 
-class NetworkManager {
+class NetworkManager: NetworkManagerProtocol {
     static let shared = NetworkManager()
-    private init() {}
+    private let session: URLSessionProtocol
 
-    func fetchData<T: Decodable>(from endpoint: String, responseType: T.Type) -> AnyPublisher<T, NetworkError> {
+    init(session: URLSessionProtocol = URLSession.shared) {
+        self.session = session
+    }
+
+    func fetchData<T: Decodable>(
+        from endpoint: String,
+        responseType: T.Type,
+        method: HTTPMethod = .get,
+        body: Data? = nil
+    ) -> AnyPublisher<T, NetworkError> {
         guard let url = URL(string: APIConstants.baseURL + endpoint) else {
             return Fail(error: NetworkError.invalidURL).eraseToAnyPublisher()
         }
 
-        return URLSession.shared.dataTaskPublisher(for: url)
+        var request = URLRequest(url: url)
+        request.httpMethod = method.rawValue
+
+        if let body = body {
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        
+
+        return session.dataTaskPublisher(for: request)
             .tryMap { data, response -> Data in
                 guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
                     throw NetworkError.requestFailed
@@ -26,7 +44,9 @@ class NetworkManager {
             }
             .decode(type: T.self, decoder: JSONDecoder())
             .mapError { error -> NetworkError in
-                if error is DecodingError {
+                if let urlError = error as? URLError {
+                    return .requestFailed 
+                } else if error is DecodingError {
                     return .decodingFailed
                 }
                 return .unknown

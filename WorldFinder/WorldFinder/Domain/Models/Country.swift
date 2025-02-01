@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Country: Identifiable, Codable {
+struct Country: Identifiable, Codable, Equatable {
     let id = UUID()
     let name: String
     let topLevelDomain: [String]?
@@ -57,6 +57,28 @@ struct Country: Identifiable, Codable {
         let acronym: String
         let name: String
     }
+    
+    static func == (lhs: Country, rhs: Country) -> Bool {
+         return lhs.name == rhs.name &&
+                lhs.alpha2Code == rhs.alpha2Code &&
+                lhs.alpha3Code == rhs.alpha3Code &&
+                lhs.population == rhs.population &&
+                lhs.region == rhs.region &&
+                lhs.subregion == rhs.subregion &&
+                lhs.numericCode == rhs.numericCode &&
+                lhs.demonym == rhs.demonym &&
+                lhs.flag == rhs.flag &&
+                lhs.topLevelDomain == rhs.topLevelDomain &&
+                lhs.callingCodes == rhs.callingCodes &&
+                lhs.capital == rhs.capital &&
+                lhs.altSpellings == rhs.altSpellings &&
+                lhs.latlng == rhs.latlng &&
+                lhs.area == rhs.area &&
+                lhs.timezones == rhs.timezones &&
+                lhs.borders == rhs.borders &&
+                lhs.nativeName == rhs.nativeName &&
+                lhs.independent == rhs.independent
+     }
 }
 
 
@@ -137,6 +159,142 @@ extension Country {
                 Country.RegionalBloc(acronym: "AU", name: "African Union")
             ],
             cioc: "EGY",
+            independent: true
+        )
+    }
+}
+
+extension Country {
+    static var spain: Country {
+        Country(
+            name: "Spain",
+            topLevelDomain: [".es"],
+            alpha2Code: "ES",
+            alpha3Code: "ESP",
+            callingCodes: ["34"],
+            capital: "Madrid",
+            altSpellings: ["ES", "España", "Reino de España"],
+            subregion: "Southern Europe",
+            region: "Europe",
+            population: 46754778,
+            latlng: [40.4637, -3.7492],
+            demonym: "Spanish",
+            area: 505992.0,
+            timezones: ["UTC+01:00"],
+            borders: ["AND", "FRA", "GIB", "PRT", "MAR"],
+            nativeName: "España",
+            numericCode: "724",
+            flags: Country.Flag(svg: "", png: ""),
+            currencies: [Country.Currency(code: "EUR", name: "Euro", symbol: "€")],
+            languages: [Country.Language(iso639_1: "es", iso639_2: "spa", name: "Spanish", nativeName: "Español")],
+            translations: [:],
+            flag: "",
+            regionalBlocs: [Country.RegionalBloc(acronym: "EU", name: "European Union")],
+            cioc: "ESP",
+            independent: true
+        )
+    }
+
+    static var germany: Country {
+        Country(
+            name: "Germany",
+            topLevelDomain: [".de"],
+            alpha2Code: "DE",
+            alpha3Code: "DEU",
+            callingCodes: ["49"],
+            capital: "Berlin",
+            altSpellings: ["DE", "Deutschland"],
+            subregion: "Western Europe",
+            region: "Europe",
+            population: 83000000,
+            latlng: [51.1657, 10.4515],
+            demonym: "German",
+            area: 357022.0,
+            timezones: ["UTC+01:00"],
+            borders: ["AUT", "BEL", "CZE", "DNK", "FRA", "LUX", "NLD", "POL", "CHE"],
+            nativeName: "Deutschland",
+            numericCode: "276",
+            flags: Country.Flag(svg: "", png: ""),
+            currencies: [Country.Currency(code: "EUR", name: "Euro", symbol: "€")],
+            languages: [Country.Language(iso639_1: "de", iso639_2: "deu", name: "German", nativeName: "Deutsch")],
+            translations: [:],
+            flag: "",
+            regionalBlocs: [Country.RegionalBloc(acronym: "EU", name: "European Union")],
+            cioc: "GER",
+            independent: true
+        )
+    }
+
+    static var italy: Country {
+        Country(
+            name: "Italy",
+            topLevelDomain: [".it"],
+            alpha2Code: "IT",
+            alpha3Code: "ITA",
+            callingCodes: ["39"],
+            capital: "Rome",
+            altSpellings: ["IT", "Italia", "Repubblica Italiana"],
+            subregion: "Southern Europe",
+            region: "Europe",
+            population: 60244639,
+            latlng: [41.8719, 12.5674],
+            demonym: "Italian",
+            area: 301340.0,
+            timezones: ["UTC+01:00"],
+            borders: ["AUT", "FRA", "SMR", "SVN", "VAT"],
+            nativeName: "Italia",
+            numericCode: "380",
+            flags: Country.Flag(svg: "", png: ""),
+            currencies: [Country.Currency(code: "EUR", name: "Euro", symbol: "€")],
+            languages: [Country.Language(iso639_1: "it", iso639_2: "ita", name: "Italian", nativeName: "Italiano")],
+            translations: [:],
+            flag: "",
+            regionalBlocs: [Country.RegionalBloc(acronym: "EU", name: "European Union")],
+            cioc: "ITA",
+            independent: true
+        )
+    }
+    
+    static var ksa: Country {
+        Country(
+            name: "Saudi Arabia",
+            topLevelDomain: [".sa"],
+            alpha2Code: "SA",
+            alpha3Code: "SAU",
+            callingCodes: ["+966"],
+            capital: "Riyadh",
+            altSpellings: ["SA", "Kingdom of Saudi Arabia", "المملكة العربية السعودية"],
+            subregion: "Western Asia",
+            region: "Asia",
+            population: 34813871,
+            latlng: [23.8859, 45.0792],
+            demonym: "Saudi",
+            area: 2149690.0,
+            timezones: ["UTC+03:00"],
+            borders: ["IRQ", "JOR", "KWT", "OMN", "QAT", "ARE", "YEM"],
+            nativeName: "المملكة العربية السعودية",
+            numericCode: "682",
+            flags: Country.Flag(
+                svg: "https://upload.wikimedia.org/wikipedia/commons/0/0d/Flag_of_Saudi_Arabia.svg",
+                png: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Flag_of_Saudi_Arabia.svg/320px-Flag_of_Saudi_Arabia.svg.png"
+            ),
+            currencies: [
+                Country.Currency(code: "SAR", name: "Saudi Riyal", symbol: "﷼")
+            ],
+            languages: [
+                Country.Language(iso639_1: "ar", iso639_2: "ara", name: "Arabic", nativeName: "العربية")
+            ],
+            translations: [
+                "de": "Saudi-Arabien",
+                "es": "Arabia Saudita",
+                "fr": "Arabie Saoudite",
+                "it": "Arabia Saudita"
+            ],
+            flag: "https://upload.wikimedia.org/wikipedia/commons/0/0d/Flag_of_Saudi_Arabia.svg",
+            regionalBlocs: [
+                Country.RegionalBloc(acronym: "AL", name: "Arab League")
+            ],
+            cioc: "KSA",
             independent: true
         )
     }

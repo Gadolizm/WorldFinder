@@ -11,18 +11,21 @@ import Combine
 
 // MARK: - Mock URLSession for Unit Tests
 
-class MockURLSession: URLSessionProtocol {
-    private let mockData: Data?
-    private let mockResponse: URLResponse?
-    private let mockError: URLError?
+import Combine
+import Foundation
 
-    init(data: Data?, response: URLResponse?, error: URLError?) {
+class MockURLSession: URLSessionProtocol {
+    var mockData: Data?
+    var mockResponse: URLResponse?
+    var mockError: URLError?
+
+    init(data: Data? = nil, response: URLResponse? = nil, error: URLError? = nil) {
         self.mockData = data
         self.mockResponse = response
         self.mockError = error
     }
-    
-    func fetchDataPublisher(for url: URL) -> AnyPublisher<(data: Data, response: URLResponse), URLError> {
+
+    func dataTaskPublisher(for request: URLRequest) -> AnyPublisher<(Data, URLResponse), URLError> {
         if let error = mockError {
             return Fail(error: error).eraseToAnyPublisher()
         }
@@ -30,8 +33,8 @@ class MockURLSession: URLSessionProtocol {
         guard let data = mockData, let response = mockResponse else {
             return Fail(error: URLError(.badServerResponse)).eraseToAnyPublisher()
         }
-        
-        return Just((data: data, response: response))
+
+        return Just((data, response))
             .setFailureType(to: URLError.self)
             .eraseToAnyPublisher()
     }

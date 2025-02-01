@@ -10,95 +10,73 @@ import Combine
 
 
 class GetCountriesUseCaseTests: XCTestCase {
-    var useCase: GetCountriesUseCase!
+    
     var mockRepository: MockCountryRepository!
-    var cancellables: Set<AnyCancellable> = []
+    var getCountriesUseCase: GetCountriesUseCase!
+    var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         mockRepository = MockCountryRepository()
-        useCase = GetCountriesUseCase(repository: mockRepository)
+        getCountriesUseCase = GetCountriesUseCase(repository: mockRepository)
+        cancellables = []
     }
 
     override func tearDown() {
-        useCase = nil
         mockRepository = nil
-        cancellables.removeAll()
+        getCountriesUseCase = nil
+        cancellables = nil
         super.tearDown()
     }
 
-    // ✅ Success Case: Fetching Countries Successfully
-    func testExecute_Success() {
-        // Given: A list of mock countries
-        let mockCountries = [
-            Country(
-                name: "United States",
-                topLevelDomain: [".us"],
-                alpha2Code: "US",
-                alpha3Code: "USA",
-                callingCodes: ["1"],
-                capital: "Washington, D.C.",
-                altSpellings: ["US", "USA"],
-                subregion: "North America",
-                region: "Americas",
-                population: 331000000,
-                latlng: [37.0902, -95.7129],
-                demonym: "American",
-                area: 9833517.0,
-                timezones: ["UTC−12:00", "UTC−11:00", "UTC−10:00"],
-                borders: ["CAN", "MEX"],
-                nativeName: "United States",
-                numericCode: "840",
-                flags: Country.Flag(svg: "https://flagcdn.com/us.svg", png: "https://flagcdn.com/w320/us.png"),
-                currencies: [Country.Currency(code: "USD", name: "United States Dollar", symbol: "$")],
-                languages: [Country.Language(iso639_1: "en", iso639_2: "eng", name: "English", nativeName: "English")],
-                translations: ["de": "Vereinigte Staaten", "es": "Estados Unidos"],
-                flag: "https://flagcdn.com/us.svg",
-                regionalBlocs: [Country.RegionalBloc(acronym: "NAFTA", name: "North American Free Trade Agreement")],
-                cioc: "USA",
-                independent: true
-            )
+    /// ✅ Test successful country fetching
+    func testGetCountries_Success() {
+        // Given
+        let expectedCountries = [
+            Country.sample,
+            Country.defaultCountry
         ]
+        mockRepository.mockCountries = expectedCountries
 
-        mockRepository.result = .success(mockCountries)
-        let expectation = self.expectation(description: "Fetching countries successfully")
+        let expectation = self.expectation(description: "Fetching countries should return correct data")
 
         // When
-        useCase.execute()
+        getCountriesUseCase.execute()
             .sink(receiveCompletion: { completion in
                 if case .failure(let error) = completion {
-                    XCTFail("❌ Expected success but got failure: \(error)")
+                    XCTFail("Expected success but got failure: \(error)")
                 }
             }, receiveValue: { countries in
                 // Then
-                XCTAssertEqual(countries.count, 1)
-                XCTAssertEqual(countries[0].name, "United States")
+                XCTAssertEqual(countries.count, 2)
+                XCTAssertEqual(countries[0].name, "France") // ✅ Uses `sample`
+                XCTAssertEqual(countries[1].name, "Egypt") // ✅ Uses `defaultCountry`
                 expectation.fulfill()
             })
             .store(in: &cancellables)
 
-        waitForExpectations(timeout: 2, handler: nil)
+        waitForExpectations(timeout: 2)
     }
 
-    // ❌ Failure Case: API Error
-    func testExecute_Failure() {
-        // Given: Mock repository returns an error
-        mockRepository.result = .failure(URLError(.notConnectedToInternet))
+    /// ✅ Test error handling when repository fails
+    func testGetCountries_Failure() {
+        // Given
+        mockRepository.mockError = .requestFailed // ✅ Simulate network failure
 
-        let expectation = self.expectation(description: "Fetching countries should fail")
+        let expectation = self.expectation(description: "Fetching countries should fail with network error")
 
         // When
-        useCase.execute()
+        getCountriesUseCase.execute()
             .sink(receiveCompletion: { completion in
                 if case .failure(let error) = completion {
-                    XCTAssertNotNil(error, "✅ Expected an error and got one")
+                    XCTAssertEqual(error, .requestFailed, "Expected requestFailed but got \(error)")
                     expectation.fulfill()
                 }
             }, receiveValue: { _ in
-                XCTFail("❌ Expected failure but got success")
+                XCTFail("Expected failure but got success")
             })
             .store(in: &cancellables)
 
-        waitForExpectations(timeout: 2, handler: nil)
+        waitForExpectations(timeout: 2)
     }
 }

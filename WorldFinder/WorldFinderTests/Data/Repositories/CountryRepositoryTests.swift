@@ -10,59 +10,66 @@ import Combine
 
 
 class CountryRepositoryTests: XCTestCase {
-    var repository: CountryRepository!
+    
     var mockService: MockCountryService!
-    var cancellables: Set<AnyCancellable> = []
+    var mockUserDefaults: UserDefaults!
+    var repository: CountryRepository!
+    var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         mockService = MockCountryService()
-        repository = CountryRepository(service: mockService)
+        mockUserDefaults = UserDefaults(suiteName: "TestDefaults")! // ✅ Use test-specific UserDefaults
+        repository = CountryRepository(service: mockService, userDefaults: mockUserDefaults)
+        cancellables = []
     }
 
     override func tearDown() {
-        repository = nil
+        mockUserDefaults.removePersistentDomain(forName: "TestDefaults") // ✅ Clear test UserDefaults
         mockService = nil
-        cancellables.removeAll()
+        repository = nil
+        cancellables = nil
         super.tearDown()
     }
 
-    // ✅ Success Case: Fetching Countries Successfully
-    func testGetCountries_Success() {
-        // Given: A list of mock countries
-        let mockCountries = [
-            Country(
-                name: "United States",
-                topLevelDomain: [".us"],
-                alpha2Code: "US",
-                alpha3Code: "USA",
-                callingCodes: ["1"],
-                capital: "Washington, D.C.",
-                altSpellings: ["US", "USA"],
-                subregion: "North America",
-                region: "Americas",
-                population: 331000000,
-                latlng: [37.0902, -95.7129],
-                demonym: "American",
-                area: 9833517.0,
-                timezones: ["UTC−12:00", "UTC−11:00", "UTC−10:00"],
-                borders: ["CAN", "MEX"],
-                nativeName: "United States",
-                numericCode: "840",
-                flags: Country.Flag(svg: "https://flagcdn.com/us.svg", png: "https://flagcdn.com/w320/us.png"),
-                currencies: [Country.Currency(code: "USD", name: "United States Dollar", symbol: "$")],
-                languages: [Country.Language(iso639_1: "en", iso639_2: "eng", name: "English", nativeName: "English")],
-                translations: ["de": "Vereinigte Staaten", "es": "Estados Unidos"],
-                flag: "https://flagcdn.com/us.svg",
-                regionalBlocs: [Country.RegionalBloc(acronym: "NAFTA", name: "North American Free Trade Agreement")],
-                cioc: "USA",
-                independent: true
-            )
+    /// ✅ Test fetching countries from API (No Cache)
+    func testGetCountries_FetchFromAPI() {
+        // Given
+        let expectedCountries = [
+            Country.sample,
+            Country.defaultCountry
         ]
-        
-        mockService.result = .success(mockCountries)
+        mockService.mockCountries = expectedCountries
 
-        let expectation = self.expectation(description: "Fetching countries successfully")
+        let expectation = self.expectation(description: "Fetching countries from API should return correct data")
+
+        // When
+        repository.getCountries()
+            .sink(receiveCompletion: { completion in
+                if case .failure(let error) = completion {
+                    XCTFail("Expected success but got failure: \(error)")
+                }
+            }, receiveValue: { countries in
+                // Then
+                XCTAssertEqual(countries.count, 2)
+                XCTAssertEqual(countries[0].name, "France") // ✅ Now uses `sample`
+                XCTAssertEqual(countries[1].name, "Egypt") // ✅ Now uses `defaultCountry`
+                expectation.fulfill()
+            })
+            .store(in: &cancellables)
+
+        waitForExpectations(timeout: 2)
+    }
+
+    /// ✅ Test loading countries from cache
+    func testGetCountries_LoadFromCache() {
+        // Given
+        let cachedCountries = [
+            Country.sample
+        ]
+        repository.saveCountriesToCache(cachedCountries) // ✅ Save to cache
+
+        let expectation = self.expectation(description: "Fetching countries from cache should return correct data")
 
         // When
         repository.getCountries()
@@ -73,26 +80,26 @@ class CountryRepositoryTests: XCTestCase {
             }, receiveValue: { countries in
                 // Then
                 XCTAssertEqual(countries.count, 1)
-                XCTAssertEqual(countries[0].name, "United States")
+                XCTAssertEqual(countries[0].name, "France")
                 expectation.fulfill()
             })
             .store(in: &cancellables)
 
-        waitForExpectations(timeout: 2, handler: nil)
+        waitForExpectations(timeout: 2)
     }
 
-    // ❌ Failure Case: API Error
-    func testGetCountries_Failure() {
-        // Given: Mock service returns an error
-        mockService.result = .failure(URLError(.notConnectedToInternet))
+    /// ✅ Test failure when cache is empty
+    func testGetCountries_CacheNotFound() {
+        // Given
+        mockUserDefaults.removeObject(forKey: "savedCountries") // ✅ Ensure cache is empty
 
-        let expectation = self.expectation(description: "Fetching countries should fail")
+        let expectation = self.expectation(description: "Fetching from cache should fail when cache is empty")
 
         // When
-        repository.getCountries()
+        repository.loadCountriesFromCache()
             .sink(receiveCompletion: { completion in
                 if case .failure(let error) = completion {
-                    XCTAssertNotNil(error, "Expected an error but got nil")
+                    XCTAssertEqual(error, .cacheNotFound, "Expected cacheNotFound but got \(error)")
                     expectation.fulfill()
                 }
             }, receiveValue: { _ in
@@ -100,6 +107,55 @@ class CountryRepositoryTests: XCTestCase {
             })
             .store(in: &cancellables)
 
-        waitForExpectations(timeout: 2, handler: nil)
+        waitForExpectations(timeout: 2)
+    }
+
+    /// ✅ Test saving and loading selected countries
+    func testSaveAndLoadSelectedCountries() {
+        // Given
+        let selectedCountries = [
+            Country.defaultCountry
+        ]
+        repository.saveSelectedCountries(selectedCountries)
+
+        let expectation = self.expectation(description: "Selected countries should be saved and loaded correctly")
+
+        // When
+        repository.loadSelectedCountries()
+            .sink(receiveCompletion: { completion in
+                if case .failure(let error) = completion {
+                    XCTFail("Expected success but got failure: \(error)")
+                }
+            }, receiveValue: { countries in
+                // Then
+                XCTAssertEqual(countries.count, 1)
+                XCTAssertEqual(countries[0].name, "Egypt")
+                expectation.fulfill()
+            })
+            .store(in: &cancellables)
+
+        waitForExpectations(timeout: 2)
+    }
+
+    /// ✅ Test clearing cached countries
+    func testClearCachedCountries() {
+        // Given
+        repository.saveCountriesToCache([Country.sample]) // ✅ Save to cache
+
+        let expectation = self.expectation(description: "Cache should be cleared")
+
+        // When
+        repository.clearCachedCountries()
+            .sink(receiveValue: {
+                // ✅ Explicitly define type `[Country]?`
+                let cachedCountries: [Country]? = self.mockUserDefaults.codable(forKey: "savedCountries")
+
+                // ✅ Assert cache is cleared
+                XCTAssertNil(cachedCountries, "Expected cache to be cleared, but found: \(String(describing: cachedCountries))")
+                expectation.fulfill()
+            })
+            .store(in: &cancellables)
+
+        waitForExpectations(timeout: 2)
     }
 }

@@ -1,48 +1,51 @@
 //
-//  CountryServiceTests.swift
+//  NetworkManagerTests.swift
 //  WorldFinder
 //
-//  Created by Haitham Gado on 30/01/2025.
+//  Created by Haitham Gado on 01/02/2025.
 //
 
 import XCTest
 import Combine
 @testable import WorldFinder
 
-class CountryServiceTests: XCTestCase {
+class NetworkManagerTests: XCTestCase {
     
-    var mockNetworkManager: MockNetworkManager!
-    var countryService: CountryService!
+    var mockSession: MockURLSession!
+    var networkManager: NetworkManager!
     var cancellables: Set<AnyCancellable>!
     
     override func setUp() {
         super.setUp()
-        mockNetworkManager = MockNetworkManager()
-        countryService = CountryService(networkManager: mockNetworkManager)
+        mockSession = MockURLSession()
+        networkManager = NetworkManager(session: mockSession)
         cancellables = []
     }
     
     override func tearDown() {
-        mockNetworkManager = nil
-        countryService = nil
+        mockSession = nil
+        networkManager = nil
         cancellables = nil
         super.tearDown()
     }
 
     /// ✅ Test successful API response
-    func testFetchAllCountries_Success() {
+    func testFetchData_Success() {
         // Given
         guard let jsonData = JSONTestHelper.loadJSONFile(named: "countries") else {
             XCTFail("Failed to load JSON file.")
             return
         }
-        
-        mockNetworkManager.mockData = jsonData
+        mockSession.mockData = jsonData
+        mockSession.mockResponse = HTTPURLResponse(url: URL(string: "https://mockapi.com")!,
+                                                   statusCode: 200,
+                                                   httpVersion: nil,
+                                                   headerFields: nil)
 
-        let expectation = self.expectation(description: "Fetching countries should return correct data")
+        let expectation = self.expectation(description: "Fetching data should return correct response")
 
         // When
-        countryService.fetchAllCountries()
+        networkManager.fetchData(from: "/countries", responseType: [Country].self)
             .sink(receiveCompletion: { completion in
                 if case .failure(let error) = completion {
                     XCTFail("Expected success but got failure: \(error)")
@@ -59,19 +62,23 @@ class CountryServiceTests: XCTestCase {
         waitForExpectations(timeout: 2)
     }
 
-    /// ✅ Test decoding failure
-    func testFetchAllCountries_DecodingFailure() {
+    /// ✅ Test decoding failure when API returns invalid JSON
+    func testFetchData_DecodingFailure() {
         // Given
         let invalidJsonData = "invalid json".data(using: .utf8)!
-        mockNetworkManager.mockData = invalidJsonData
-        
-        let expectation = self.expectation(description: "Fetching countries should fail due to decoding error")
+        mockSession.mockData = invalidJsonData
+        mockSession.mockResponse = HTTPURLResponse(url: URL(string: "https://mockapi.com")!,
+                                                   statusCode: 200,
+                                                   httpVersion: nil,
+                                                   headerFields: nil)
+
+        let expectation = self.expectation(description: "Fetching data should fail due to decoding error")
 
         // When
-        countryService.fetchAllCountries()
+        networkManager.fetchData(from: "/countries", responseType: [Country].self)
             .sink(receiveCompletion: { completion in
                 if case .failure(let error) = completion {
-                    XCTAssertEqual(error, .decodingFailed, "Expected decoding failure but got \(error)")
+                    XCTAssertEqual(error, .decodingFailed, "Expected decoding error but got \(error)")
                     expectation.fulfill()
                 }
             }, receiveValue: { _ in
@@ -82,15 +89,15 @@ class CountryServiceTests: XCTestCase {
         waitForExpectations(timeout: 2)
     }
 
-    /// ✅ Test network failure
-    func testFetchAllCountries_NetworkError() {
+    /// ✅ Test network failure (e.g., no internet)
+    func testFetchData_NetworkError() {
         // Given
-        mockNetworkManager.mockError = .requestFailed
+        mockSession.mockError = URLError(.notConnectedToInternet)
 
-        let expectation = self.expectation(description: "Fetching countries should fail due to network error")
+        let expectation = self.expectation(description: "Fetching data should fail due to network error")
 
         // When
-        countryService.fetchAllCountries()
+        networkManager.fetchData(from: "/countries", responseType: [Country].self)
             .sink(receiveCompletion: { completion in
                 if case .failure(let error) = completion {
                     XCTAssertEqual(error, .requestFailed, "Expected network error but got \(error)")

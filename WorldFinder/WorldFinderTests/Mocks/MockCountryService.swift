@@ -7,18 +7,20 @@
 
 import Combine
 import Foundation
-import XCTest
 @testable import WorldFinder
 
 // MARK: - Mock Service
+
 class MockCountryService: CountryServiceProtocol {
-    var result: Result<[Country], Error>?
-    
-    func fetchAllCountries() -> AnyPublisher<[Country], Error> {
-        guard let result = result else {
-            return Fail(error: URLError(.badServerResponse)).eraseToAnyPublisher()
+    var mockCountries: [Country] = []
+    var mockError: NetworkError?
+
+    func fetchAllCountries(method: HTTPMethod = .get, body: Data? = nil) -> AnyPublisher<[Country], NetworkError> {
+        if let error = mockError {
+            return Fail(error: error).eraseToAnyPublisher()
         }
-        
-        return result.publisher.eraseToAnyPublisher()
+        return Just(mockCountries)
+            .setFailureType(to: NetworkError.self)
+            .eraseToAnyPublisher()
     }
 }

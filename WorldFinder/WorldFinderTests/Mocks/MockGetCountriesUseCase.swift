@@ -6,19 +6,12 @@
 //
 
 import Combine
-import XCTest
-import CoreLocation
 @testable import WorldFinder
 
-
-// MARK: - Mock GetCountriesUseCase
 class MockGetCountriesUseCase: GetCountriesUseCaseProtocol {
-    var result: Result<[Country], Error>?
-
-    func execute() -> AnyPublisher<[Country], Error> {
-        guard let result = result else {
-            return Fail(error: URLError(.badServerResponse)).eraseToAnyPublisher()
-        }
+    var result: Result<[Country], NetworkError> = .success([Country.sample])
+    
+    func execute() -> AnyPublisher<[Country], NetworkError> {
         return result.publisher.eraseToAnyPublisher()
     }
 }

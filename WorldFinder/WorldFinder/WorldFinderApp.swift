@@ -14,7 +14,8 @@ struct WorldFinderApp: App {
         WindowGroup {
             CountryView(
                 viewModel: CountryViewModel(
-                    getCountriesUseCase: GetCountriesUseCase(repository: CountryRepository())
+                    getCountriesUseCase: GetCountriesUseCase(repository: CountryRepository()),
+                    manageLocalCountriesUseCase: ManageLocalCountriesUseCase(repository: CountryRepository())
                 )
             )
         }

@@ -12,45 +12,51 @@ import CoreLocation
 class CountryViewModel: NSObject, CountryViewModelProtocol, ObservableObject {
     @Published var countries: [Country] = []
     @Published var selectedCountries: [Country] = []
-    @Published var errorMessage: ErrorMessage?                
+    @Published var errorMessage: ErrorMessage?
     @Published var selectedCountry: Country? = nil
+    @Published var isLoading = false
     
     let countriesKey = "savedCountries"
     let selectedCountryKey = "selectedCountry"
     
-    private let getCountriesUseCase: GetCountriesUseCaseProtocol
-    private var cancellables = Set<AnyCancellable>()
-    let userDefaults: UserDefaultsProtocol
+    let getCountriesUseCase: GetCountriesUseCaseProtocol
+    let manageLocalCountriesUseCase: ManageLocalCountriesUseCaseProtocol
+    var cancellables = Set<AnyCancellable>()
     
     var locationManager: CLLocationManager?
-    private var defaultCountry: Country
+    var defaultCountry: Country
     
     init(
         defaultCountry: Country = .defaultCountry,
         getCountriesUseCase: GetCountriesUseCaseProtocol,
-        userDefaults: UserDefaultsProtocol = UserDefaults.standard
+        manageLocalCountriesUseCase: ManageLocalCountriesUseCaseProtocol
     ) {
         self.defaultCountry = defaultCountry
         self.getCountriesUseCase = getCountriesUseCase
-        self.userDefaults = userDefaults
+        self.manageLocalCountriesUseCase = manageLocalCountriesUseCase
         super.init()
         setupLocationManager()
-        loadCountriesFromUserDefaults()
-        loadSelectedCountriesFromUserDefaults()
+        getCountries()
+        loadSelectedCountries()
     }
     
     /// Fetches the list of countries from the REST API.
     
-    func fetchCountries() {
+    func getCountries() {
+        DispatchQueue.main.async {
+            self.isLoading = true  // ✅ Show loading before fetching data
+        }
         getCountriesUseCase.execute()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
                 switch completion {
                 case .failure(let error):
+                    self?.countries = []
                     self?.handleError(error)
                 case .finished:
                     break
                 }
+                self?.isLoading = false
             } receiveValue: { [weak self] countries in
                 self?.countries = countries
             }
@@ -66,7 +72,7 @@ class CountryViewModel: NSObject, CountryViewModelProtocol, ObservableObject {
         
         if !selectedCountries.contains(where: { $0.name == country.name }) {
             selectedCountries.append(country)
-            saveSelectedCountriesToUserDefaults()
+            saveSelectedCountries()
         } else {
             self.errorMessage = ErrorMessage(message: "\(country.name) is already in the selected list.")
         }
@@ -75,7 +81,7 @@ class CountryViewModel: NSObject, CountryViewModelProtocol, ObservableObject {
     /// Removes a country from the selected list.
     func removeCountry(at offsets: IndexSet) {
         selectedCountries.remove(atOffsets: offsets)
-        saveSelectedCountriesToUserDefaults()
+        saveSelectedCountries()
     }
     
     /// Add a country by its name (if it exists in the list of countries).
@@ -94,7 +100,20 @@ class CountryViewModel: NSObject, CountryViewModelProtocol, ObservableObject {
     
     /// Handles errors and provides user-friendly error messages.
     private func handleError(_ error: Error) {
-        if let urlError = error as? URLError {
+        if let networkError = error as? NetworkError {
+            switch networkError {
+            case .cacheNotFound:
+                errorMessage = ErrorMessage(message: "No cached data found.")
+            case .unknown:
+                errorMessage = ErrorMessage(message: "An unknown error occurred. Please try again.")
+            case .invalidURL:
+                errorMessage = ErrorMessage(message: "invalidURL")
+            case .requestFailed:
+                errorMessage = ErrorMessage(message: "requestFailed")
+            case .decodingFailed:
+                errorMessage = ErrorMessage(message: "decodingFailed")
+            }
+        } else if let urlError = error as? URLError {
             switch urlError.code {
             case .notConnectedToInternet:
                 errorMessage = ErrorMessage(message: "You appear to be offline. Please check your internet connection.")

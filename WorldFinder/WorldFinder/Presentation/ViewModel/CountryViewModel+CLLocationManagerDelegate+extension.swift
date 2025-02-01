@@ -7,44 +7,65 @@
 
 import CoreLocation
 
-
 extension CountryViewModel: CLLocationManagerDelegate {
     
-    /// CLLocationManagerDelegate: Handles location updates.
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
-        reverseGeocode(location)
-        manager.stopUpdatingLocation()
-    }
-    
-    /// Set up CLLocationManager for location access.
     func setupLocationManager() {
         locationManager = CLLocationManager()
         locationManager?.delegate = self
+        locationManager?.desiredAccuracy = kCLLocationAccuracyBest
         locationManager?.requestWhenInUseAuthorization()
     }
 
-    /// Start fetching the user's location.
     func fetchUserLocation() {
+        guard CLLocationManager.locationServicesEnabled() else { return setDefaultCountry() }
         locationManager?.startUpdatingLocation()
     }
 
-    /// Reverse geocode location to find the country.
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+        manager.stopUpdatingLocation()
+        reverseGeocode(location)
+    }
+
     private func reverseGeocode(_ location: CLLocation) {
-        let geocoder = CLGeocoder()
-        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
-            guard let self = self, error == nil, let countryName = placemarks?.first?.country else {
-                self?.setDefaultCountry()
-                return
-            }
-            self.addCountryByName(countryName)
+        CLGeocoder().reverseGeocodeLocation(location) { [weak self] placemarks, error in
+            self?.addCountryByName(placemarks?.first?.country ?? self?.defaultCountry.name ?? "Egypt")
         }
     }
-    
-    /// Handle location access denial.
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        handleAuthorizationStatus(manager.authorizationStatus)
+    }
+
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        if status == .denied || status == .restricted {
+        handleAuthorizationStatus(status)
+    }
+
+//    private func handleAuthorization(_ status: CLAuthorizationStatus) {
+//        if status == .authorizedWhenInUse || status == .authorizedAlways {
+//            fetchUserLocation()
+//        } else {
+//            setDefaultCountry()
+//        }
+//    }
+    
+    /// Handles different authorization statuses
+    private func handleAuthorizationStatus(_ status: CLAuthorizationStatus) {
+        print("🟢 Received authorization status: \(status)")
+
+        switch status {
+        case .notDetermined:
+            print("ℹ️ Location permission not determined yet.")
+        case .authorizedWhenInUse, .authorizedAlways:
+            print("✅ Location access granted. Fetching location...")
+            fetchUserLocation()
+        case .denied, .restricted:
+            print("❌ Location access denied/restricted. Calling setDefaultCountry().")
+            setDefaultCountry()
+        @unknown default:
+            print("⚠️ Unknown location authorization status.")
             setDefaultCountry()
         }
     }
 }
+
